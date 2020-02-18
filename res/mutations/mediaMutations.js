@@ -57,10 +57,6 @@ const mediaMutations =
             await avatar.save();
             await user.save();
 
-            // host the image
-            const { hostImageRequest } = require('../imageHosting');
-            hostImageRequest(avatar._id.toString(), avatar.buffer);
-
             user.avatar = `/images/${avatar._id}`;
 
             return user;
@@ -94,10 +90,6 @@ const mediaMutations =
 
             // remove the refrence to the avatar
             user.avatar = null;
-
-            // unhost the image
-            const { unhostImageRequest } = require('../imageHosting');
-            unhostImageRequest(avatarId);
 
             await user.save();
             await avatar.save();
@@ -228,10 +220,6 @@ const mediaMutations =
             await img.save();
             await post.save();
 
-            // host the image
-            const { hostImageRequest } = require('../imageHosting');
-            hostImageRequest(img._id.toString(), img.buffer);
-
             // add the post to the user's timeline, and list of posts
             user.timeline.unshift(post._id);
             user.posts.unshift(post._id);
@@ -357,10 +345,6 @@ const mediaMutations =
             await Image.findByIdAndDelete(post.image);
             // delet the post object
             await post.remove();
-
-            // unhost the post's image
-            const { unhostImageRequest } = require('../imageHosting');
-            unhostImageRequest(post.image);
 
             return true;
         }

@@ -28,85 +28,42 @@ admin.initializeApp({
 const schema = require('./res/schema');
 const url = process.env.URL || require('./res/config/dbConfig');
 
-mongoose.connect(url, { useNewUrlParser: true });
-
-// host images
-getImages = async () => {
-    const Avatar = require('./res/modles/avatarModle');
-    const Image = require('./res/modles/imageModle');
-
-    // get all the images from the database
-    const avatars = await Avatar.find({}).lean();
-    const images = await Image.find({}).lean();
-
-    const dbImages = [...images, ...avatars];
-
-    for (let i = 0; i < dbImages.length; i++) {
-        // convert them into a buffer
-        const imageBuffer = new Buffer.from(dbImages[i].buffer, 'base64');
-
-        // create a url ending with the image's id
-        const url = `/images/${dbImages[i]._id}`;
-
-        // use the url to host the image
-        app.use(url, (req, res, next) => {
-            res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Content-Length': imageBuffer.length
-            });
-            res.end(imageBuffer);
-        });
-    }
-}
-
+mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
 // make sure that the connection has been established
-mongoose.connection.once(('open'), async () => {
+mongoose.connection.once(('open'), () => {
     console.log('connected to the database!');
-    await getImages();
 });
 
 app.use(cors());
 app.use(bodyParser.json({ limit: '2mb' }));
 
-// used to host new images after the server has been deployed
-app.use('/host_image', (req, res, next) => {
-    // get the base64 string from the request's body
-    const body = req.body;
-    const buffer = Buffer.from(body.buffer, 'base64');
-
-    // create a url ending with the id that's passed in the body
-    const url = `/images/${body.id}`;
-
-    // use the url to host the image
-    app.use(url, (req, res, next) => {
-        res.writeHead(200, {
-            'Content-Type': 'image/png',
-            'Content-Length': buffer.length
-        });
-        res.end(buffer);
-    });
-
-    res.end();
-});
-
-// used to unhost images after the server has been deployed
-app.use('/unhost_image', (req, res, next) => {
-    // get the image's id
-    const imageId = req.body.id;
-    // get the routes
-    const routes = app._router.stack;
-
-    if (routes) {
-        routes.forEach((route, index) => {
-            // get the route that contains the image's id, and remove it
-            const routeName = route.regexp.toString()
-            if (routeName.includes(imageId)) {
-                routes.splice(index, 1);
-            }
-        });
+// host images
+const Image = require('./res/modles/imageModle');
+const Avatar = require('./res/modles/avatarModle');
+app.use('/images', async (req, res, next) => {
+    // get the image's id from the url's path
+    const imageId = req.path.substr(1, req.path.length - 1);
+    // look for the image in post images, and avatars
+    const postImage = await Image.findOne({ _id: imageId });
+    let image;
+    // check if the image was found
+    if (postImage) {
+        image = postImage;
+    } else {
+        // otherwise look for it in the avatars modle
+        const avatarImage = await Avatar.findOne({ _id: imageId });
+        image = postImage || avatarImage;
     }
 
-    res.end();
+    // return the image if it's found
+    if (image) {
+        const imageBuffer = Buffer.from(image.buffer, 'base64');
+        res.writeHead(200, {
+            'Content-Type': 'image/png',
+            'Content-Length': imageBuffer.length
+        });
+        res.end(imageBuffer);
+    }
 });
 
 app.use('/graphql', expressGraphQL({
