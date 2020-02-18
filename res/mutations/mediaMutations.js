@@ -196,7 +196,7 @@ const mediaMutations =
                             datetime: datetime.toUTCString()
                         });
 
-                        mentionedUser.notifications.push(mentionNotification._id);
+                        mentionedUser.notifications.unshift(mentionNotification._id);
 
                         if (mentionedUser.isLoggedIn) {
                             // send a notification to the mentioned user
@@ -400,7 +400,7 @@ const mediaMutations =
                         datetime: datetime.toUTCString()
                     });
 
-                    postUploader.notifications.push(postNotification._id);
+                    postUploader.notifications.unshift(postNotification._id);
 
                     await postNotification.save();
                     await postUploader.save();
@@ -556,7 +556,7 @@ const mediaMutations =
                         });
 
                         // add it to the mentioned user's notifications list
-                        mentionedUser.notifications.push(mentionNotification._id);
+                        mentionedUser.notifications.unshift(mentionNotification._id);
 
                         if (mentionedUser.isLoggedIn) {
                             // send a push notification to the mentioned user
@@ -588,7 +588,7 @@ const mediaMutations =
                     datetime: datetime.toUTCString()
                 });
 
-                postUploader.notifications.push(postNotification._id);
+                postUploader.notifications.unshift(postNotification._id);
 
                 await postNotification.save();
                 await postUploader.save();

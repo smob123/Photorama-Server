@@ -70,7 +70,7 @@ const notificationQueries = {
                     }
                     notification.postImage = `/images/${post.image}`;
 
-                    notifications.push(notification);
+                    notifications.unshift(notification);
 
                     continue;
                 }
@@ -84,7 +84,7 @@ const notificationQueries = {
                         notification.userAvatar = `/images/${user.avatar}`;
                     }
                     notification.postImage = `/images/${post.image}`;
-                    notifications.push(notification);
+                    notifications.unshift(notification);
                     continue;
                 }
 
@@ -94,7 +94,7 @@ const notificationQueries = {
                 if (notification) {
                     const follower = await User.findOne({ username: notification.followerName });
                     notification.userAvatar = `/images/${follower.avatar}`;
-                    notifications.push(notification);
+                    notifications.unshift(notification);
                     continue;
                 }
             }
