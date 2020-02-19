@@ -396,7 +396,7 @@ const mediaMutations =
                         userId: post.userId,
                         interactorId: user._id,
                         postId: post._id,
-                        message: `${user.screenName} has like your post`,
+                        message: `${user.screenName} has liked your post`,
                         datetime: datetime.toUTCString()
                     });
 
@@ -458,7 +458,7 @@ const mediaMutations =
                 user.likes.splice(postIdIndex, 1);
 
                 if (post.userId.toString() !== user._id.toString()) {
-                    const message = `${user.screenName} has like your post`;
+                    const message = `${user.screenName} has liked your post`;
 
                     // remove notification from the other user's notifications list
                     const postNotification = await PostNotification.findOne({
