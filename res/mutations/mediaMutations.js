@@ -122,16 +122,16 @@ const mediaMutations =
 
             // create an image object
             const img = new Image({
-                title: `${args.userId}_${datetime.toUTCString()}`,
+                title: `${userId}_${datetime.toUTCString()}`,
                 buffer: image
             });
 
 
             // create a post object
             const post = new Post({
-                userId: args.userId,
+                userId: userId,
                 image: img._id,
-                datetime: datetime.toUTCString(),
+                datetime: datetime,
                 description: description,
                 likes: []
             });

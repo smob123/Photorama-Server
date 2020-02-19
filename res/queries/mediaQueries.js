@@ -46,14 +46,22 @@ const mediaQueries = {
             const postIds = user.posts;
             const numOfPosts = endIndex - startIndex;
             // look for posts within the given range
-            const posts = await Post.find().where('_id').in(postIds).skip(startIndex).limit(numOfPosts);
+            const postList = await Post.find().where('_id').in(postIds).sort([['datetime', -1
+            ]]).skip(startIndex).limit(numOfPosts);
 
+            const posts = [];
             // add extra information to match the server's schema
-            for (const post of posts) {
+            for (const post of postList) {
+                const p = { ...post._doc };
+                delete p['_id'];
+                p.id = post._id;
                 const image = `/images/${post.image}`;
-                post.image = image;
-                post.username = user.username;
-                post.userScreenName = user.screenName;
+                p.datetime = new Date(post.datetime).toUTCString();
+                p.image = image;
+                p.username = user.username;
+                p.userScreenName = user.screenName;
+
+                posts.push(p);
             }
 
             return posts;
@@ -68,17 +76,20 @@ const mediaQueries = {
             // look for post in the database
             const post = await Post.findById(args.postId).catch(err => { throw new Error('Post not found'); });
 
+
             // add extra information to match the server's schema
+            const p = { ...post._doc };
+            delete p['_id'];
+            p.id = post._id;
             const image = `/images/${post.image}`;
+            p.image = image;
+            p.datetime = new Date(post.datetime).toUTCString();
+            const user = await User.findById(p.userId);
+            p.username = user.username;
+            p.userScreenName = user.screenName;
+            p.userAvatar = `/images/${user.avatar}`;
 
-            post.image = image;
-            const user = await User.findById(post.userId);
-            const userAvatar = `/images/${user.avatar}`;
-            post.username = user.username;
-            post.userScreenName = user.screenName;
-            post.userAvatar = userAvatar;
-
-            return post;
+            return p;
         }
     },
     getPostComments: {
@@ -154,27 +165,34 @@ const mediaQueries = {
             const timeline = user.timeline.slice(startIndex, endIndex);
 
             // look for them in the database
-            const posts = await Post.find({
+            const postList = await Post.find({
                 '_id': {
                     $in: timeline
                 }
             });
 
+            const posts = [];
+
             // add extra data to match the server's schema
-            for (const post of posts) {
+            for (const post of postList) {
+                const p = { ...post._doc };
+                p.id = post._id;
                 const image = `/images/${post.image}`;
-                post.image = image;
+                p.datetime = new Date(post.datetime).toUTCString();
+                p.image = image;
                 const u = await User.findById(post.userId);
-                post.username = u.username;
-                post.userScreenName = u.screenName;
+                p.username = u.username;
+                p.userScreenName = u.screenName;
                 if (u.avatar) {
-                    post.userAvatar = `/images/${u.avatar}`;
+                    p.userAvatar = `/images/${u.avatar}`;
                 } else {
-                    post.userAvatar = 'null';
+                    p.userAvatar = 'null';
                 }
+
+                posts.unshift(p);
             }
 
-            return posts.reverse();
+            return posts;
         }
     },
     getPostRecommendations: {
@@ -211,7 +229,11 @@ const mediaQueries = {
             // get the user's recommended hashtags
             const hashtags = user.recommendedHashtags;
 
+            // post objects that will be returned
             const posts = [];
+            // the IDs of the posts that were fetch from the database, which will
+            // be stored in the user's recommended posts list, in order to not send the same
+            // posts when the user sends another request with a different range
             let postIds = [];
 
             // check if the user has any recommended hashtags
@@ -222,22 +244,28 @@ const mediaQueries = {
                 postIds = await recomendations.getShuffledHashtagPosts(hashtags);
 
                 // look for posts that haven't been sent to the user, and limit them to the requested number of posts
-                const p = await Post.find()
+                const postList = await Post.find()
                     .where('_id').in(postIds).where('_id').nin(user.recommendedPosts).limit(numOfPosts);
 
                 // add extra data to match the server's schema
-                for (post of p) {
+                for (post of postList) {
+                    const p = { ...post._doc };
+                    delete p['_id'];
+                    p.id = post._id;
                     const image = `/images/${post.image}`;
-                    post.image = image;
+                    p.datetime = new Date(post.datetime).toUTCString();
+                    p.image = image;
                     const u = await User.findById(post.userId);
-                    post.username = u.username;
-                    post.userScreenName = u.screenName;
+                    p.username = u.username;
+                    p.userScreenName = u.screenName;
                     if (u.avatar) {
-                        post.userAvatar = `/images/${u.avatar}`;
+                        p.userAvatar = `/images/${u.avatar}`;
                     } else {
-                        post.userAvatar = 'null';
+                        p.userAvatar = 'null';
                     }
-                    posts.push(post);
+
+                    posts.push(p);
+                    postIds.push(p.id);
                 }
 
                 // check if start index is 0
@@ -262,8 +290,8 @@ const mediaQueries = {
             const remainingSpace = numOfPosts - posts.length;
 
             // get random posts, which are unrelated to the user
-            const randomPosts = await Post.find().where('userId').ne(user._id)
-                .nin(posts).where('_id').nin(user.recommendedPosts)
+            const randomPosts = await Post.where('userId').ne(user._id)
+                .where('_id').nin(postIds).where('_id').nin(user.recommendedPosts)
                 .limit(remainingSpace);
             // shuffle them
             recomendations.shuffle(randomPosts);
@@ -278,17 +306,22 @@ const mediaQueries = {
 
             // add extra data to match the server's schema
             for (const post of postRecomendations) {
+                const p = { ...post._doc };
+                delete p['_id'];
+                p.id = post._id;
                 const image = `/images/${post.image}`;
-                post.image = image;
+                p.datetime = new Date(post.datetime).toUTCString();
+                p.image = image;
                 const u = await User.findById(post.userId);
-                post.username = u.username;
-                post.userScreenName = u.screenName;
+                p.username = u.username;
+                p.userScreenName = u.screenName;
                 if (u.avatar) {
-                    post.userAvatar = `/images/${u.avatar}`;
+                    p.userAvatar = `/images/${u.avatar}`;
                 } else {
-                    post.userAvatar = 'null';
+                    p.userAvatar = 'null';
                 }
-                posts.push(post);
+
+                posts.push(p);
             }
 
             return posts;

@@ -8,7 +8,7 @@ const schema = mongoose.Schema;
 const postSchema = new schema({
     userId: String,
     image: String,
-    datetime: String,
+    datetime: Date,
     description: String,
     likes: [String],
     comments: [String],

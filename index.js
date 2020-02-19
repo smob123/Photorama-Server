@@ -68,7 +68,7 @@ app.use('/images', async (req, res, next) => {
 
 app.use('/graphql', expressGraphQL({
     schema: schema,
-    graphiql: false
+    graphiql: true
 }));
 
 app.listen(PORT);
