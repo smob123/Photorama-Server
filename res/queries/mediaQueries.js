@@ -15,7 +15,10 @@ const Post = require('../modles/postModle');
 const Comment = require('../modles/commentModle');
 const Hashtag = require('../modles/hashtagModle');
 
-const { postType, commentType } = require('../dataTypes');
+const {
+    postType,
+    commentType
+} = require('../dataTypes');
 
 const PostRecomendations = require('../utils/postRecomendations');
 const recomendations = new PostRecomendations();
@@ -24,12 +27,22 @@ const mediaQueries = {
     getUserPosts: {
         type: GraphQLList(postType),
         args: {
-            username: { type: GraphQLNonNull(GraphQLString) },
-            startIndex: { type: GraphQLNonNull(GraphQLInt) },
-            endIndex: { type: GraphQLNonNull(GraphQLInt) }
+            username: {
+                type: GraphQLNonNull(GraphQLString)
+            },
+            startIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            },
+            endIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            }
         },
         resolve: async (parent, args) => {
-            const { username, startIndex, endIndex } = args;
+            const {
+                username,
+                startIndex,
+                endIndex
+            } = args;
 
             // validate the indexes
             if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) {
@@ -37,7 +50,9 @@ const mediaQueries = {
             }
 
             // look for the user in the database
-            const user = await User.findOne({ usernameUpCase: username.toUpperCase() });
+            const user = await User.findOne({
+                usernameUpCase: username.toUpperCase()
+            });
 
             if (!user) {
                 throw new Error('User not found');
@@ -46,13 +61,16 @@ const mediaQueries = {
             const postIds = user.posts;
             const numOfPosts = endIndex - startIndex;
             // look for posts within the given range
-            const postList = await Post.find().where('_id').in(postIds).sort([['datetime', -1
-            ]]).skip(startIndex).limit(numOfPosts);
+            const postList = await Post.find().where('_id').in(postIds).sort([
+                ['datetime', -1]
+            ]).skip(startIndex).limit(numOfPosts);
 
             const posts = [];
             // add extra information to match the server's schema
             for (const post of postList) {
-                const p = { ...post._doc };
+                const p = {
+                    ...post._doc
+                };
                 delete p['_id'];
                 p.id = post._id;
                 const image = `/images/${post.image}`;
@@ -70,15 +88,21 @@ const mediaQueries = {
     getPostById: {
         type: postType,
         args: {
-            postId: { type: GraphQLNonNull(GraphQLString) }
+            postId: {
+                type: GraphQLNonNull(GraphQLString)
+            }
         },
         resolve: async (parent, args) => {
             // look for post in the database
-            const post = await Post.findById(args.postId).catch(err => { throw new Error('Post not found'); });
+            const post = await Post.findById(args.postId).catch(err => {
+                throw new Error('Post not found');
+            });
 
 
             // add extra information to match the server's schema
-            const p = { ...post._doc };
+            const p = {
+                ...post._doc
+            };
             delete p['_id'];
             p.id = post._id;
             const image = `/images/${post.image}`;
@@ -95,12 +119,22 @@ const mediaQueries = {
     getPostComments: {
         type: GraphQLList(commentType),
         args: {
-            postId: { type: GraphQLNonNull(GraphQLString) },
-            startIndex: { type: GraphQLNonNull(GraphQLInt) },
-            endIndex: { type: GraphQLNonNull(GraphQLInt) }
+            postId: {
+                type: GraphQLNonNull(GraphQLString)
+            },
+            startIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            },
+            endIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            }
         },
         resolve: async (parent, args) => {
-            const { postId, startIndex, endIndex } = args;
+            const {
+                postId,
+                startIndex,
+                endIndex
+            } = args;
 
             // validate indexes
             if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) {
@@ -108,7 +142,9 @@ const mediaQueries = {
             }
 
             // look for post in the database
-            const post = await Post.findById(postId).catch(err => { throw new Error('Post not found'); });
+            const post = await Post.findById(postId).catch(err => {
+                throw new Error('Post not found');
+            });
 
             // get the number of comments that's required
             const numOfComments = endIndex - startIndex;
@@ -135,13 +171,26 @@ const mediaQueries = {
     getUserTimeline: {
         type: GraphQLList(postType),
         args: {
-            userId: { type: GraphQLNonNull(GraphQLString) },
-            jwt: { type: GraphQLNonNull(GraphQLString) },
-            startIndex: { type: GraphQLNonNull(GraphQLInt) },
-            endIndex: { type: GraphQLNonNull(GraphQLInt) }
+            userId: {
+                type: GraphQLNonNull(GraphQLString)
+            },
+            jwt: {
+                type: GraphQLNonNull(GraphQLString)
+            },
+            startIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            },
+            endIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            }
         },
         resolve: async (parent, args) => {
-            const { userId, jwt, startIndex, endIndex } = args;
+            const {
+                userId,
+                jwt,
+                startIndex,
+                endIndex
+            } = args;
 
             // validate the indexes
             if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) {
@@ -149,7 +198,9 @@ const mediaQueries = {
             }
 
             // look for user in the database
-            const user = await User.findById(userId).catch(err => { throw new Error('Authentication Error'); });
+            const user = await User.findById(userId).catch(err => {
+                throw new Error('Authentication Error');
+            });
 
             // validate the jwt
             if (user.jwt != jwt) {
@@ -175,7 +226,9 @@ const mediaQueries = {
 
             // add extra data to match the server's schema
             for (const post of postList) {
-                const p = { ...post._doc };
+                const p = {
+                    ...post._doc
+                };
                 p.id = post._id;
                 const image = `/images/${post.image}`;
                 p.datetime = new Date(post.datetime).toUTCString();
@@ -198,20 +251,35 @@ const mediaQueries = {
     getPostRecommendations: {
         type: GraphQLList(postType),
         args: {
-            userId: { type: GraphQLNonNull(GraphQLString) },
-            jwt: { type: GraphQLNonNull(GraphQLString) },
-            startIndex: { type: GraphQLNonNull(GraphQLInt) },
-            endIndex: { type: GraphQLNonNull(GraphQLInt) }
+            userId: {
+                type: GraphQLNonNull(GraphQLString)
+            },
+            jwt: {
+                type: GraphQLNonNull(GraphQLString)
+            },
+            startIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            },
+            endIndex: {
+                type: GraphQLNonNull(GraphQLInt)
+            }
         },
         resolve: async (parent, args) => {
-            const { userId, jwt, startIndex, endIndex } = args;
+            const {
+                userId,
+                jwt,
+                startIndex,
+                endIndex
+            } = args;
 
             // validate the indexes
             if (startIndex < 0 || endIndex < 0 || startIndex > endIndex) {
                 throw new Error('Invalid range');
             }
 
-            const user = await User.findById(userId).catch(err => { throw new Error('User not found'); });
+            const user = await User.findById(userId).catch(err => {
+                throw new Error('User not found');
+            });
 
             // reset the user's recommended posts if the start index is 0
             if (startIndex === 0) {
@@ -249,7 +317,9 @@ const mediaQueries = {
 
                 // add extra data to match the server's schema
                 for (post of postList) {
-                    const p = { ...post._doc };
+                    const p = {
+                        ...post._doc
+                    };
                     delete p['_id'];
                     p.id = post._id;
                     const image = `/images/${post.image}`;
@@ -306,7 +376,9 @@ const mediaQueries = {
 
             // add extra data to match the server's schema
             for (const post of postRecomendations) {
-                const p = { ...post._doc };
+                const p = {
+                    ...post._doc
+                };
                 delete p['_id'];
                 p.id = post._id;
                 const image = `/images/${post.image}`;
@@ -330,13 +402,19 @@ const mediaQueries = {
     getPostsByHashtag: {
         type: GraphQLList(postType),
         args: {
-            hashtag: { type: GraphQLString }
+            hashtag: {
+                type: GraphQLString
+            }
         },
         resolve: async (parent, args) => {
-            const { hashtag } = args;
+            const {
+                hashtag
+            } = args;
 
             // look for the hashtag in the database
-            const ht = await Hashtag.findOne({ hashtag });
+            const ht = await Hashtag.findOne({
+                hashtag
+            });
 
             if (!ht) {
                 throw new Error('Hashtag not found');
@@ -352,19 +430,24 @@ const mediaQueries = {
             for (const post of postsList) {
                 const user = await User.findById(post.userId);
 
-                post.username = user.username;
-                post.userScreenName = user.screenName;
-                post.userId = user._id;
-
-                if (user.avatar) {
-                    post.userAvatar = `/images/${user.avatar}`;
+                const p = {
+                    ...post._doc
+                };
+                delete p['_id'];
+                p.id = post._id;
+                const image = `/images/${post.image}`;
+                p.datetime = new Date(post.datetime).toUTCString();
+                p.image = image;
+                const u = await User.findById(post.userId);
+                p.username = u.username;
+                p.userScreenName = u.screenName;
+                if (u.avatar) {
+                    p.userAvatar = `/images/${u.avatar}`;
                 } else {
-                    post.userAvatar = 'null';
+                    p.userAvatar = 'null';
                 }
 
-                post.image = `/images/${post.image}`;
-
-                posts.unshift(post);
+                posts.push(p);
             }
 
             return posts;
@@ -372,4 +455,6 @@ const mediaQueries = {
     }
 };
 
-module.exports = { mediaQueries };
+module.exports = {
+    mediaQueries
+};
