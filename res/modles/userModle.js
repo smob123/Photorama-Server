@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const schema = mongoose.Schema;
 
 const userSchema = new schema({
-    email: String,
-    username: String,
-    usernameUpCase: String,
+    email: { type: String, unique: true },
+    username: { type: String, unique: true },
+    usernameUpCase: { type: String, unique: true },
     screenName: String,
     password: String,
     isLoggedIn: { type: Boolean, default: true },
